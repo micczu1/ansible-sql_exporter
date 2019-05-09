@@ -38,7 +38,7 @@ Use it in a playbook as follows:
 Configuration notes
 -------------------
 
-Some helpful tips are in original sql_exporter [README.md](https://github.com/free/sql_exporter/blob/master/README.md):  
+Some helpful tips are in sql_exporter [README.md](https://github.com/free/sql_exporter/blob/master/README.md):  
 https://github.com/free/sql_exporter/blob/master/README.md
 
 License
