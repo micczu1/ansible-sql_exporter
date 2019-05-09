@@ -1,0 +1,128 @@
+---
+- include: preflight.yml
+
+- name: Create the SQL Exporter group
+  become: true
+  group:
+    name: "{{ __sql_exporter_group }}"
+    state: present
+    system: true
+
+- name: Create the SQL Exporter user
+  become: true
+  user:
+    name: "{{ __sql_exporter_user }}"
+    groups: "{{ __sql_exporter_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    createhome: false
+    home: /
+
+- name: Create SQL Exporter configuration directory
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ __sql_exporter_group }}"
+    mode: 0770
+  with_items:
+    - "{{ sql_exporter_config_dir }}"
+
+
+- name: Download sql_exporter binary to local folder
+  get_url:
+#         https://github.com/free/sql_exporter/releases/download/0.5/sql_exporter-0.5.linux-amd64.tar.gz
+    url: "https://github.com/free/sql_exporter/releases/download/{{ sql_exporter_version }}/sql_exporter-{{ sql_exporter_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}.tar.gz"
+    dest: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}.tar.gz"
+    checksum: "sha256:{{ __sql_exporter_checksum }}"
+  register: _download_binary
+  until: _download_binary is succeeded
+  retries: 5
+  delay: 2
+  delegate_to: localhost
+  check_mode: false
+
+- name: Unpack sql_exporter binary
+  unarchive:
+    src: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}.tar.gz"
+    dest: "/tmp"
+    creates: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}/sql_exporter"
+  delegate_to: localhost
+  check_mode: false
+
+- name: Propagate sql_exporter binaries
+  become: true
+  copy:
+    src: "/tmp/sql_exporter-{{ sql_exporter_version }}.linux-{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}/sql_exporter"
+    dest: "/usr/local/bin/sql_exporter"
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - restart sql exporter
+
+- name: Configure SQL Exporter
+  become: true
+  copy:
+#  template:
+    src: "{{ sql_exporter_config_file }}"
+#    src: "{{ sql_exporter_config_file_template }}"
+    dest: "{{ sql_exporter_config_dir }}/{{ sql_exporter_config_file }}"
+    force: true
+    owner: root
+    group: "{{ __sql_exporter_group }}"
+    mode: 0640
+  notify:
+    - restart sql exporter
+
+- name: Configure SQL Exporter collectors
+  become: true
+  copy:
+    src: "{{ item }}"
+    dest: "{{ sql_exporter_config_dir }}/"
+    force: true
+    owner: root
+    group: "{{ __sql_exporter_group }}"
+    mode: 0640
+  with_fileglob:
+   - collectors/*.collector.yml
+#   - "{{ sql_exporter_collector_files_dir }}/*.yml"
+  notify:
+    - restart sql exporter
+
+# - name: Configure Sql Exporter queries
+#   become: true
+#   copy:
+#     src: "{{ item }}"
+#     dest: "{{ sql_exporter_config_dir }}/queries"
+#     force: true
+#     owner: root
+#     group: "{{ __sql_exporter_group }}"
+#     mode: 0640
+#   with_fileglob:
+#    - queries/*.sql
+# #   - "{{ sql_exporter_static_queries_files_dir }}/*.sql"
+#   notify:
+#     - restart sql exporter
+
+  when: not ansible_check_mode
+- name: Copy the sql_exporter systemd service file
+  become: true
+  template:
+    src: sql_exporter.service.j2
+    dest: /etc/systemd/system/sql_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  no_log: true
+  notify:
+    - restart sql exporter
+
+- name: Ensure sql_exporter is enabled on boot
+  become: true
+  systemd:
+    name: sql_exporter
+    state: started
+    enabled: true

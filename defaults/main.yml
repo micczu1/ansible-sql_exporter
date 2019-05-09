@@ -1,0 +1,27 @@
+---
+sql_exporter_version: "0.5"
+# sql_exporter_web_listen_address: '0.0.0.0:9399'
+# sql_exporter_metrics_path: /metrics
+
+# sql_exporter_config_file_template: sql_exporter.yml.j2
+sql_exporter_config_file: sql_exporter.yml
+sql_exporter_config_dir: /etc/sql_exporter
+
+# sql_exporter_static_jobs_files_dir:
+#   - jobs
+
+# sql_exporter_static_queries_files_dir:
+#   - queries
+
+mysqld_exporter_dsn: "exporter:exporter@(localhost:3306)/"
+
+# sql_exporter_jobs_configs:
+#   - job_name: "prometheus"
+#     metrics_path: "{{ prometheus_metrics_path }}"
+#     static_configs:
+#       - targets:
+#           - "{{ ansible_fqdn | default(ansible_host) | default('localhost') }}:9090"
+#   - job_name: "node"
+#     file_sd_configs:
+#       - files:
+#           - "{{ prometheus_config_dir }}/file_sd/node.yml"

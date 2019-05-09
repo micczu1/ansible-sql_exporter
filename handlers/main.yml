@@ -1,0 +1,7 @@
+---
+- name: restart sql exporter
+  become: true
+  systemd:
+    daemon_reload: true
+    name: sql_exporter
+    state: restarted

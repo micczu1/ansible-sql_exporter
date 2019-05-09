@@ -1,0 +1,8 @@
+---
+- name: "Get checksum for {{ go_arch_map[ansible_architecture] | default(ansible_architecture) }} architecture"
+  set_fact:
+    __sql_exporter_checksum: "{{ item.split(' ')[0] }}"
+  with_items:
+    - "{{ lookup('url', 'https://github.com/free/sql_exporter/releases/download/' + sql_exporter_version + '/sha256sums.txt', wantlist=True) | list }}"
+  when: "('linux-' + (go_arch_map[ansible_architecture] | default(ansible_architecture)) + '.tar.gz') in item"
+#https://github.com/free/sql_exporter/releases/download/0.5/sha256sums.txt

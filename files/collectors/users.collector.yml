@@ -1,0 +1,20 @@
+#
+# Ansible managed file. Be wary of possible overwrites.
+#
+
+---
+# This collector will be referenced in the exporter configuration as `pricing_data_freshness`.
+collector_name: users_test
+
+# A Prometheus metric with (optional) additional labels, value and labels populated from one query.
+metrics:
+  - metric_name: max_statement_time
+    type: gauge
+    help: 'Time when prices for a market were last updated.'
+    key_labels:
+      # Populated from the `market` column of each row.
+#      - Market
+      - user
+    values: [maxstatement]
+    query: |
+       select user, max(max_statement_time) AS maxstatement from mysql.user

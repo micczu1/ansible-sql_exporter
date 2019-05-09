@@ -1,0 +1,20 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Prometheus Sql Exporter by free
+After=network.target
+
+[Service]
+Type=simple
+User={{ __sql_exporter_user }}
+Group={{ __sql_exporter_group }}
+ExecStart=/usr/local/bin/sql_exporter \
+    -web.metrics-path {{ sql_exporter_metrics_path | default('/metrics') }} \
+    -web.listen-address {{ sql_exporter_web_listen_address | default('0.0.0.0:9399') }} \
+    -config.file {{ sql_exporter_config_dir }}/{{ sql_exporter_config_file }}
+
+SyslogIdentifier=sql_exporter
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

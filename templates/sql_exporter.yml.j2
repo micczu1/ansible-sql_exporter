@@ -1,0 +1,8 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{{ ansible_managed | comment }}
+
+jobs:
+ - {{ sql_exporter_config_dir }}/jobs/*.yml
+
+queries:
+ - {{ sql_exporter_config_dir }}/queries/*.sql
